@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Opening Draft Explorer</title>
+  <meta name="description" content="Opening settlement placement on a fixed hex board as a zero-sum snake draft: reply matrix, subgame-perfect equilibrium, every Nash outcome, and a playable draft against an optimal opponent.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>Opening Draft Explorer</h1>
+      <p class="lede">Where should two players put their first settlements? The opening on a fixed 19-hex board, solved as a two-player zero-sum game.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <details class="card howto" open>
+      <summary><h2>How to read this</h2></summary>
+      <div class="howto-body">
+        <p><strong>The moves.</strong> Every corner where a settlement could go is sorted into one of four <strong>categories</strong>: <b class="cat-C">C</b>ity (ore and grain), <b class="cat-R">R</b>oad (wood and brick), <b class="cat-B">B</b>alanced, or <b class="cat-P">P</b>ort. On each turn a player names a category and gets the best corner still open in it (open means not taken and not next to a taken corner). The draft is a snake: P1, P2, P2, P1.</p>
+        <p><strong>The value of a hand.</strong> V = scarcity-weighted income (expected cards per 36 rolls, with rare resources counting more) + δ for each different resource + σ × the extra cards a port earns over trading 4:1 with the bank. σ = 1 means every card produced gets traded, so it is an upper bound on what a port is worth.</p>
+        <p><strong>Zero-sum.</strong> Only one player wins, so the payoff is the lead: P1 gets V(P1) − V(P2) and P2 gets the negative. A gain for your opponent is a loss for you, which is why a player will sometimes take a spot mainly to keep it away from the other.</p>
+        <p><strong>Why every Nash equilibrium gives the same value.</strong> In a finite two-player zero-sum game the minimax theorem says P1's best guaranteed lead (maximin) equals the lowest lead P2 can hold P1 to (minimax). That number is the <em>value of the game</em>, and every Nash equilibrium pays exactly it. Different equilibria can take different paths, but never to a different score.</p>
+        <p><strong>Why we report the subgame-perfect one.</strong> Some equilibria rely on threats a player would not carry out once a mistake happens. The subgame-perfect equilibrium, found by backward induction, is optimal at <em>every</em> point of the draft, including after errors, so it is credible and tells you what to do from any position.</p>
+        <p><strong>Checking it by hand.</strong> The <strong>reply matrix</strong> lists P1's lead for every opening and first reply, assuming the last two picks are played well. P2 picks the smallest number in the row (bold); P1 picks the row whose smallest number is largest (highlighted). That cell is the value of the game. Then try to beat the computer in <strong>Play the draft</strong>.</p>
+      </div>
+    </details>
+
+    <section class="grid top-grid">
+      <div class="card board-card">
+        <div class="card-head">
+          <h2>Board and categories</h2>
+          <p class="hint">Hover or tap a corner for its production and value. Large labelled dots mark the top spot in each category.</p>
+        </div>
+        <div class="board-wrap" id="board-wrap">
+          <svg id="board" class="board" role="img" aria-label="Hex board with settlement corners colored by category"></svg>
+          <div class="tooltip" id="tooltip" role="status" hidden></div>
+        </div>
+        <ul class="legend" id="cat-legend"></ul>
+        <ul class="legend res-legend" id="res-legend"></ul>
+      </div>
+
+      <div class="side-col">
+        <div class="card params-card">
+          <div class="card-head row">
+            <h2>Parameters</h2>
+            <button type="button" id="reset" class="btn">Reset</button>
+          </div>
+          <div class="sliders">
+            <div class="slider">
+              <label for="s-delta"><span><span class="sym">δ</span><span class="name">diversity bonus per resource</span></span><output id="o-delta" for="s-delta"></output></label>
+              <input type="range" id="s-delta" min="0" max="3" step="0.05">
+            </div>
+            <div class="slider">
+              <label for="s-sigma"><span><span class="sym">σ</span><span class="name">share of income traded</span></span><output id="o-sigma" for="s-sigma"></output></label>
+              <div class="range-wrap">
+                <input type="range" id="s-sigma" min="0" max="4" step="0.05" list="sigma-ticks">
+                <span class="tick" style="--at: 0.25" aria-hidden="true"></span>
+              </div>
+              <datalist id="sigma-ticks"><option value="1"></option></datalist>
+              <p class="hint slider-note" id="sigma-note">σ = 1: every card traded — upper bound of conversion value.</p>
+            </div>
+          </div>
+          <label class="toggle" for="t-scarcity">
+            <input type="checkbox" id="t-scarcity">
+            <span class="switch" aria-hidden="true"></span>
+            <span><b>Scarcity weights</b> <span class="muted" id="weights-text"></span></span>
+          </label>
+        </div>
+
+        <div class="card matrix-card">
+          <div class="card-head">
+            <h2>Reply matrix</h2>
+            <p class="hint">Rows: <span class="p1">P1</span>'s opening. Columns: <span class="p2">P2</span>'s first reply. Each cell is P1's lead after the last two picks (P2, then P1) are played optimally. <b>Bold</b>: P2's best reply (row minimum). Highlighted: the largest row minimum, P1's optimal opening.</p>
+          </div>
+          <div class="table-scroll">
+            <table class="matrix" id="reply-matrix"></table>
+          </div>
+          <p class="hint" id="reply-summary"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card seq-card">
+      <div class="card-head">
+        <h2>Equilibrium of the snake draft</h2>
+        <p class="hint" id="eq-summary"></p>
+      </div>
+      <div class="grid seq-grid">
+        <div class="board-wrap">
+          <svg id="seq-board" class="board" role="img" aria-label="Board with the four subgame-perfect placements numbered in order"></svg>
+        </div>
+        <div class="seq-detail">
+          <div class="stats" id="seq-stats"></div>
+          <ol class="steps" id="seq-steps"></ol>
+          <h3>The two hands</h3>
+          <div class="table-scroll">
+            <table class="hands" id="hands"></table>
+          </div>
+          <div class="grid two">
+            <div>
+              <h3>Nash equilibrium outcomes</h3>
+              <div id="ne-list"></div>
+            </div>
+            <div>
+              <h3>Ties (where mixing is possible)</h3>
+              <div id="ties"></div>
+            </div>
+          </div>
+          <h3>Does the snake order matter?</h3>
+          <div id="order-compare"></div>
+          <h3>Check: exact game over individual corners</h3>
+          <div id="vertex-check"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card play-card">
+      <div class="card-head">
+        <h2>Play the draft</h2>
+        <p class="hint">Pick a side and choose a category on each of your turns. The computer plays the subgame-perfect strategy. The lead shown assumes both sides play optimally from the current position, so any drop is the cost of your choice.</p>
+      </div>
+      <div class="play-controls">
+        <div class="seg" role="radiogroup" aria-label="Play as">
+          <button type="button" class="seg-btn" id="play-p1" role="radio">Play as <span class="p1">P1</span></button>
+          <button type="button" class="seg-btn" id="play-p2" role="radio">Play as <span class="p2">P2</span></button>
+        </div>
+        <button type="button" class="btn" id="play-undo">Undo</button>
+        <button type="button" class="btn" id="play-new">New game</button>
+        <label class="toggle small" for="play-hints">
+          <input type="checkbox" id="play-hints">
+          <span class="switch" aria-hidden="true"></span>
+          <span>Show the value of each choice</span>
+        </label>
+      </div>
+      <div class="grid seq-grid">
+        <div class="board-wrap">
+          <svg id="play-board" class="board" role="img" aria-label="Board with the placements made so far in your draft"></svg>
+        </div>
+        <div>
+          <p class="play-status" id="play-status" aria-live="polite"></p>
+          <div class="cat-buttons" id="play-cats"></div>
+          <div class="stats" id="play-stats"></div>
+          <ol class="steps" id="play-log"></ol>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p>Built for a MATH 167 class project. The model and solvers are a direct port of the project's Python reference (<code>analysis/model.py</code>); <code>node test.mjs</code> checks them against its outputs. The board is the beginner board of a popular hex-tile trading board game, drawn with generic flat-colored hexes; this app is not affiliated with the game's publisher.</p>
+    </footer>
+  </main>
+
+  <script src="board-data.js"></script>
+  <script src="model.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
