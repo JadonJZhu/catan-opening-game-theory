@@ -27,7 +27,6 @@
   function f2(x) { return (Math.abs(x) < 0.005 ? 0 : x).toFixed(2); }
   function signed(x) { return Math.abs(x) < 0.005 ? "0.00" : (x > 0 ? "+" : "−") + Math.abs(x).toFixed(2); }
   function catSpan(c) { return '<b class="cat-' + c + '">' + c + "</b>"; }
-  function pathHtml(p) { return '<span class="mono path">' + p.split("").map(catSpan).join("") + "</span>"; }
   function prodChips(prod) {
     return RES.filter(function (r) { return prod[r] > 0; }).map(function (r) {
       return '<span><span class="sw" style="background:var(--' + r + ')"></span> ' + r + " " + prod[r] + "</span>";
@@ -127,17 +126,7 @@
     });
   }
 
-  function stepsHtml(placements) {
-    return placements.map(function (p) {
-      var v = BOARD.vertices[p.vertex], pl = p.player === 0 ? "p1" : "p2";
-      return '<li><span class="badge ' + pl + '">' + p.move + '</span><span class="what"><span class="' + pl + '">' + PLAYER[p.player] +
-        "</span> takes " + catSpan(p.category) + " " + CAT_NAMES[p.category] + " → corner " + p.vertex +
-        "<small>" + prodText(v.production) + (v.port ? " · " + portLabel(v.port) : "") + "</small></span></li>";
-    }).join("");
-  }
-
   var boardSvg = $("board"), boardLayer = drawBase(boardSvg);
-  var seqLayer = drawBase($("seq-board"));
   var playLayer = drawBase($("play-board"));
   var tooltip = $("tooltip"), wrap = $("board-wrap"), stickyVid = null;
 
@@ -295,80 +284,6 @@
       " and P2 answers " + catSpan(spe[1]) + ". This is the value of the game.";
   }
 
-  /* --------------------------------------------------- equilibrium */
-  function renderEquilibrium() {
-    var spe = sol.spe, v = spe.value, path = spe.path.join("");
-    drawPlacements(seqLayer, sol.placements, false);
-    var h1 = model.hand(spe.S0), h2 = model.hand(spe.S1);
-
-    $("eq-summary").innerHTML = "Solved by backward induction over " + Object.keys(sol.nodes).filter(function (k) { return sol.nodes[k].leaf; }).length +
-      " complete drafts (categories with no open corner are skipped). Subgame-perfect path " + pathHtml(path) + ", value " + signed(v) + ".";
-
-    $("seq-stats").innerHTML =
-      '<div class="stat"><div class="k">Value of the game</div><div class="v">' + signed(v) + '</div><div class="s">P1\'s lead · ' + leadWords(v) + "</div></div>" +
-      '<div class="stat"><div class="k">V(P1)</div><div class="v p1">' + f2(h1.total) + '</div><div class="s">moves 1 and 4</div></div>' +
-      '<div class="stat"><div class="k">V(P2)</div><div class="v p2">' + f2(h2.total) + '</div><div class="s">moves 2 and 3</div></div>';
-
-    $("seq-steps").innerHTML = stepsHtml(sol.placements);
-
-    var rows = [["P1", "p1", h1], ["P2", "p2", h2]].map(function (r) {
-      var hd = r[2];
-      return "<tr><th scope=\"row\" class=\"" + r[1] + "\">" + r[0] + "</th><td>" +
-        hd.vertices.map(function (x, i) { return x + " (" + catSpan(hd.categories[i]) + ")"; }).join(", ") +
-        '<small class="muted block">' + prodText(hd.production) + (hd.ports.length ? " · " + hd.ports.map(portLabel).join(", ") : "") + "</small></td>" +
-        '<td class="num">' + f2(hd.income) + '</td><td class="num">' + f2(hd.diversity) + '</td><td class="num">' + f2(hd.port) +
-        '</td><td class="num"><b>' + f2(hd.total) + "</b></td></tr>";
-    });
-    $("hands").innerHTML = '<thead><tr><th>Player</th><th>Corners</th><th class="num">Income</th><th class="num">Diversity</th>' +
-      '<th class="num">Port</th><th class="num">V</th></tr></thead><tbody>' + rows.join("") +
-      '<tr class="diff"><th scope="row">Lead</th><td class="muted">V(P1) − V(P2)</td><td class="num">' + signed(h1.income - h2.income) +
-      '</td><td class="num">' + signed(h1.diversity - h2.diversity) + '</td><td class="num">' + signed(h1.port - h2.port) +
-      '</td><td class="num"><b>' + signed(v) + "</b></td></tr></tbody>";
-
-    // Nash outcomes
-    var ne = sol.neOutcomes;
-    $("ne-list").innerHTML = '<p class="hint">' + (ne.length === 1
-      ? "Exactly one draft is the outcome of a Nash equilibrium."
-      : ne.length + " drafts are Nash equilibrium outcomes. All pay the same lead (minimax theorem).") + "</p>" +
-      '<ul class="list plain">' + ne.map(function (p) {
-        var val = sol.nodes[p].value;
-        return "<li>" + pathHtml(p) + ' <span class="muted">lead ' + signed(val) + "</span>" +
-          (p === path ? ' <span class="tag best">subgame perfect</span>' : "") + "</li>";
-      }).join("") + "</ul>";
-
-    // ties
-    var ties = sol.ties;
-    $("ties").innerHTML = !ties.length
-      ? '<p class="muted">No ties: every mover has a single best category everywhere in the tree, so there is no room to mix.</p>'
-      : '<p class="hint">At these positions the mover has more than one optimal category, so mixing between them is also optimal. Tie-break: first in C, R, B, P order.</p>' +
-        '<table class="ties"><thead><tr><th>After</th><th>Mover</th><th>Best</th><th class="num">Value</th><th>Path</th></tr></thead><tbody>' +
-        ties.map(function (t) {
-          return "<tr><td>" + (t.history ? pathHtml(t.history) : '<span class="muted">start</span>') + '</td><td class="' + t.mover.toLowerCase() + '">' + t.mover +
-            "</td><td>" + t.best.map(catSpan).join(" / ") + '</td><td class="num">' + signed(t.value) + "</td><td>" +
-            (t.on_path ? '<span class="tag best">on path</span>' : '<span class="tag">off path</span>') + "</td></tr>";
-        }).join("") + "</tbody></table>";
-
-    // order comparison
-    var alt = sol.alt, d = v - alt.value;
-    $("order-compare").innerHTML = '<table class="ties"><thead><tr><th>Order</th><th>Optimal path</th><th class="num">P1\'s lead</th></tr></thead><tbody>' +
-      '<tr><td>Snake P1, P2, P2, P1</td><td>' + pathHtml(path) + '</td><td class="num"><b>' + signed(v) + "</b></td></tr>" +
-      '<tr><td>Alternate P1, P2, P1, P2</td><td>' + pathHtml(alt.path.join("")) + '</td><td class="num">' + signed(alt.value) + "</td></tr></tbody></table>" +
-      '<p class="hint">' + (Math.abs(d) < 0.005 ? "The order makes no difference here."
-        : d < 0 ? "The snake order moves " + f2(-d) + " of lead from P1 to P2: getting two picks in a row compensates the second player."
-          : "Here the snake order is " + f2(d) + " better for P1 than alternating.") + "</p>";
-
-    $("vertex-check").innerHTML = '<p class="muted">Solving the game over all 54 corners…</p>';
-  }
-
-  function renderVertexCheck() {
-    var vg = model.vertexGame(), gap = vg.value - sol.spe.value;
-    $("vertex-check").innerHTML = "<p>If players may pick <em>any</em> corner rather than a category, the exact solution gives P1 a lead of <b>" +
-      signed(vg.value) + "</b> (P1: " + vg.P1.join(", ") + "; P2: " + vg.P2.join(", ") + "; categories " + pathHtml(vg.cats.join("")) + "). " +
-      (Math.abs(gap) < 1e-3
-        ? "That matches the category game, so restricting moves to categories loses nothing here.</p>"
-        : "That differs from the category game by " + signed(gap) + ", so at these settings the category shortcut is not exact.</p>");
-  }
-
   /* ------------------------------------------------------- play mode */
   var play = { side: 0, hist: "" };
   function lossOf(h, c) {
@@ -473,7 +388,7 @@
   }
 
   /* ---------------------------------------------------------- update */
-  var pending = false, vgTimer = null;
+  var pending = false;
   function schedule() {
     if (pending) return;
     pending = true;
@@ -488,12 +403,9 @@
     renderBoard();
     renderLegend();
     renderReplyMatrix();
-    renderEquilibrium();
     play.hist = "";
     computerMoves();
     renderPlay();
-    clearTimeout(vgTimer);
-    vgTimer = setTimeout(renderVertexCheck, 120);
   }
 
   syncInputs();

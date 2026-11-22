@@ -1,12 +1,12 @@
 # Opening Draft Explorer
 
-A static web app for the MATH 167 project. It models the opening settlement placement on a fixed hex board as a two-player **zero-sum** snake draft (P1, P2, P2, P1) and solves it by backward induction. Nothing needs to be built, and the app has no dependencies or network requests.
+A static web app for the MATH 167 project. It models the opening settlement placement on the Catan board as a two-player **zero-sum** snake draft (P1, P2, P2, P1) and solves it by backward induction. Nothing needs to be built, and the app has no dependencies or network requests.
 
 | File | What it is |
 |---|---|
 | `index.html` | Page structure |
 | `style.css` | Layout, with light and dark themes that follow `prefers-color-scheme` |
-| `app.js` | UI: board SVG, controls, reply matrix, equilibrium panel and the playable draft (DOM only) |
+| `app.js` | UI: board SVG, controls, reply matrix and the playable draft (DOM only) |
 | `model.js` | The game model and solvers, a direct port of `../analysis/model.py`. It contains no DOM code. |
 | `board-data.js` | `../data/board.json` embedded as `window.BOARD` (also `module.exports`) |
 | `test.mjs` | Checks the JS against the Python outputs in `../data/` |
@@ -20,7 +20,6 @@ A hand S (a player's settlements) is worth V(S) = Σ_r w_r·prod_S(r) + δ·Dist
 - **Board and categories**: every corner colored by category, the corrected ports, and a tooltip with production and the value breakdown (income, diversity, port gain).
 - **Parameters**: δ (0–3), σ (0–4, with σ = 1 marked as the "every card traded" upper bound), the scarcity-weights toggle, and reset. Everything re-solves live.
 - **Reply matrix**: rows are P1's opening, columns P2's first reply, cells P1's lead after the last two picks are played optimally. Bold cells are row minima (P2's best reply); the highlighted cell is the largest row minimum (maximin), P1's optimal opening. This lets a reader verify the solution by hand.
-- **Equilibrium of the snake draft**: the subgame-perfect path and value, the two hands with their breakdown, the placements numbered 1–4 on the board (P1 red, P2 blue), every Nash equilibrium outcome path, every tie node (with on/off-path flags), the snake vs alternate-order (P1, P2, P1, P2) comparison, and the exact game over individual corners as a check on the category shortcut.
 - **Play the draft**: play as P1 or P2 against the computer, which plays the subgame-perfect strategy. It shows the lead under optimal play from the current position and what each of your choices cost.
 
 ## Open it
@@ -70,5 +69,5 @@ m.solve();                            // everything the UI uses, in one call
 
 ## Notes
 
-- The hexes are generic flat colors. The board layout is the beginner board of a popular hex-tile trading board game, and the app is not affiliated with its publisher.
+- The tiles are generic flat colors. The board layout is the Catan beginner board, and the app is not affiliated with its publisher.
 - Ties inside the tree are broken by taking the first optimal category in C, R, B, P order, the same as the Python model; ties between corners inside a category go to the lowest corner id.

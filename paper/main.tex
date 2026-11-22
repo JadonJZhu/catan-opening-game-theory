@@ -36,6 +36,16 @@ Section~\ref{sec:model} builds the model. Section~\ref{sec:solve} solves it by b
 \includegraphics[width=0.6\textwidth]{board_categories.png}
 \caption{Beginner board. Dots show each vertex's category (defined under ``Strategies'' below), and the large markers are each category's best spot.}\label{fig:board}
 \end{figure}
+\begin{figure}[htbp]\centering
+\begin{minipage}[c]{0.47\textwidth}\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\topspots
+\captionof{table}{Top two spots per category and their values $V$ at baseline ($\delta=\sigma=1$).}\label{tab:top}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.49\textwidth}\centering
+\includegraphics[width=\linewidth]{value_breakdown.png}
+\captionof{figure}{What each category's best spot is worth. Even with $\sigma=1$, ports add little.}\label{fig:breakdown}
+\end{minipage}
+\end{figure}
 
 \paragraph{Value of a hand.} We value a hand $S$ as
 \begin{equation}\label{eq:V}
@@ -56,18 +66,7 @@ u_1 = V(S_1)-V(S_2), \qquad u_2=-u_1 .
 
 \paragraph{Strategies.} Every vertex with production is assigned to one of four categories (Figure~\ref{fig:board}). \textbf{P} (Port) means the vertex touches a port. \textbf{C} (City) means ore and grain together make up at least half of its pips and it produces both. \textbf{R} (Road) is the same rule for wood and brick. \textbf{B} (Balanced) is everything else. Choosing a category means \emph{``take the still-legal vertex in that category that raises the mover's $V$ the most.''} Table~\ref{tab:top} lists the best spots in each category, and Figure~\ref{fig:breakdown} splits each value into the three terms of equation~\eqref{eq:V}: income, diversity and port gain.
 
-\paragraph{Why categories?} We could instead let each move pick a specific vertex. We use categories for two reasons. First, they make strategies easy to interpret. A plan like ``split City then Road'' or ``take two Balanced spots'' says \emph{why} a spot is chosen, which a list of vertex numbers does not. Second, they make our analyses more computationally feasible. Finding every Nash equilibrium outcome and re-solving the draft across many parameter settings would be much larger tasks over individual vertices. We solve the exact vertex game only as a check, and Section~\ref{sec:robust} shows that it gives the same answer.
-
-\begin{figure}[htbp]\centering
-\begin{minipage}[c]{0.47\textwidth}\centering\footnotesize\setlength{\tabcolsep}{4pt}
-\topspots
-\captionof{table}{Top two spots per category and their values $V$ at baseline ($\delta=\sigma=1$).}\label{tab:top}
-\end{minipage}\hfill
-\begin{minipage}[c]{0.49\textwidth}\centering
-\includegraphics[width=\linewidth]{value_breakdown.png}
-\captionof{figure}{What each category's best spot is worth. Even with $\sigma=1$, ports add little.}\label{fig:breakdown}
-\end{minipage}
-\end{figure}
+\paragraph{Why categories?} We could instead let each move pick a specific vertex. We use categories for two reasons. First, they make strategies easy to interpret. A plan like ``split City then Road'' or ``take two Balanced spots'' says \emph{why} a spot is chosen, which a list of vertex numbers does not. Second, they make our analyses more computationally feasible. Finding every Nash equilibrium outcome and re-solving the draft across many parameter settings would be much larger tasks over individual vertices. We solve the exact vertex game only for a limited range of parameters, as a check. Section~\ref{sec:robust} shows that it gives the same answer there.
 
 \paragraph{The game.} Four moves in the order P1, P2, P2, P1, each choosing a category with at least one legal vertex left. Both players see every earlier move, so this is a finite game with perfect information. It has 85 decision nodes and 254 end positions.
 
@@ -93,7 +92,7 @@ The subgame-perfect equilibrium (SPE) path is $B\to C\to R\to B$. P1 first takes
 
 \begin{table}[h]\centering\small
 \handtable
-\caption{The two hands in the equilibrium. P1's lead is $26.43-25.60=0.83$.}\label{tab:hands}
+\caption{The two players in the equilibrium. P1's lead is $26.43-25.60=0.83$.}\label{tab:hands}
 \end{table}
 
 Three things stand out. First, \textbf{nobody opens on a port}. A Port opening is P1's worst choice, at $-4.12$. Ports are only worth the cards they save in trade, and the spots next to them have poor production. Second, P2 answers the Balanced opening by \emph{splitting} the remaining good economies: the best ore/grain spot, then a wood/brick spot. Taking a second Balanced spot would leave P1 a lead of $2.05$, compared with $0.83$ after the City reply. Third, moving first is worth something: P1 ends ahead.

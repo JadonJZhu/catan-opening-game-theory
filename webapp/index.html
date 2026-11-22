@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Opening Draft Explorer</title>
-  <meta name="description" content="Opening settlement placement on a fixed hex board as a zero-sum snake draft: reply matrix, subgame-perfect equilibrium, every Nash outcome, and a playable draft against an optimal opponent.">
+  <meta name="description" content="Opening settlement placement on the Catan board as a zero-sum snake draft: reply matrix and a playable draft against an optimal opponent.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
     <div class="wrap">
       <h1>Opening Draft Explorer</h1>
-      <p class="lede">Where should two players put their first settlements? The opening on a fixed 19-hex board, solved as a two-player zero-sum game.</p>
+      <p class="lede">Where should two players put their first settlements? The opening on the Catan board solved as a two-player zero-sum game.</p>
     </div>
   </header>
 
@@ -35,7 +35,7 @@
           <p class="hint">Hover or tap a corner for its production and value. Large labelled dots mark the top spot in each category.</p>
         </div>
         <div class="board-wrap" id="board-wrap">
-          <svg id="board" class="board" role="img" aria-label="Hex board with settlement corners colored by category"></svg>
+          <svg id="board" class="board" role="img" aria-label="Catan board with settlement corners colored by category"></svg>
           <div class="tooltip" id="tooltip" role="status" hidden></div>
         </div>
         <ul class="legend" id="cat-legend"></ul>
@@ -83,40 +83,6 @@
       </div>
     </section>
 
-    <section class="card seq-card">
-      <div class="card-head">
-        <h2>Equilibrium of the snake draft</h2>
-        <p class="hint" id="eq-summary"></p>
-      </div>
-      <div class="grid seq-grid">
-        <div class="board-wrap">
-          <svg id="seq-board" class="board" role="img" aria-label="Board with the four subgame-perfect placements numbered in order"></svg>
-        </div>
-        <div class="seq-detail">
-          <div class="stats" id="seq-stats"></div>
-          <ol class="steps" id="seq-steps"></ol>
-          <h3>The two hands</h3>
-          <div class="table-scroll">
-            <table class="hands" id="hands"></table>
-          </div>
-          <div class="grid two">
-            <div>
-              <h3>Nash equilibrium outcomes</h3>
-              <div id="ne-list"></div>
-            </div>
-            <div>
-              <h3>Ties (where mixing is possible)</h3>
-              <div id="ties"></div>
-            </div>
-          </div>
-          <h3>Does the snake order matter?</h3>
-          <div id="order-compare"></div>
-          <h3>Check: exact game over individual corners</h3>
-          <div id="vertex-check"></div>
-        </div>
-      </div>
-    </section>
-
     <section class="card play-card">
       <div class="card-head">
         <h2>Play the draft</h2>
@@ -149,7 +115,7 @@
     </section>
 
     <footer class="foot">
-      <p>Built for a MATH 167 class project. The model and solvers are a direct port of the project's Python reference (<code>analysis/model.py</code>); <code>node test.mjs</code> checks them against its outputs. The board is the beginner board of a popular hex-tile trading board game, drawn with generic flat-colored hexes; this app is not affiliated with the game's publisher.</p>
+      <p>Built for a MATH 167 class project. The model and solvers are a direct port of the project's Python reference (<code>analysis/model.py</code>); <code>node test.mjs</code> checks them against its outputs. The board is the Catan beginner board, drawn with generic flat-colored tiles; this app is not affiliated with the game's publisher.</p>
     </footer>
   </main>
 
